@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "openproject": {
+      "command": "node",
+      "args": ["/path/to/openproject-mcp/dist/index.js"],
+      "env": {
+        "OPENPROJECT_BASE_URL": "",
+        "OPENPROJECT_API_KEY": ""
+      }
+    }
+  }
+}
