@@ -352,7 +352,7 @@ export class OpenProjectClient {
   }): Promise<Relation> {
     const response = await this.client.post(`/api/v3/work_packages/${workPackageId}/relations`, {
       _links: {
-        workPackageTo: { href: `/api/v3/work_packages/${data.workPackageIdTo}` },
+        to: { href: `/api/v3/work_packages/${data.workPackageIdTo}` },
       },
       type: data.type,
     });
