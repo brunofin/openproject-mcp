@@ -174,7 +174,15 @@ export class OpenProjectClient {
     active?: boolean;
     public?: boolean;
   }): Promise<Project> {
-    const response = await this.client.post('/api/v3/projects', data);
+    const { description, parentId, ...rest } = data;
+    const payload: any = { ...rest };
+    if (description !== undefined) {
+      payload.description = { format: 'markdown', raw: description };
+    }
+    if (parentId !== undefined) {
+      payload._links = { parent: { href: `/api/v3/projects/${parentId}` } };
+    }
+    const response = await this.client.post('/api/v3/projects', payload);
     return response.data;
   }
 
@@ -186,7 +194,15 @@ export class OpenProjectClient {
     parentId: number;
     status: string;
   }>): Promise<Project> {
-    const response = await this.client.patch(`/api/v3/projects/${projectId}`, data);
+    const { description, parentId, ...rest } = data;
+    const payload: any = { ...rest };
+    if (description !== undefined) {
+      payload.description = { format: 'markdown', raw: description };
+    }
+    if (parentId !== undefined) {
+      payload._links = { parent: { href: `/api/v3/projects/${parentId}` } };
+    }
+    const response = await this.client.patch(`/api/v3/projects/${projectId}`, payload);
     return response.data;
   }
 
@@ -195,20 +211,28 @@ export class OpenProjectClient {
   }
 
   async listProjectMembers(projectId: number | string): Promise<{ _embedded: { elements: Membership[] } }> {
-    const response = await this.client.get(`/api/v3/projects/${projectId}/memberships`);
+    const filters = JSON.stringify([
+      { project: { operator: '=', values: [String(projectId)] } },
+    ]);
+    const response = await this.client.get(
+      `/api/v3/memberships?filters=${encodeURIComponent(filters)}`,
+    );
     return response.data;
   }
 
   async addProjectMember(projectId: number | string, userId: number, roleIds: number[]): Promise<Membership> {
-    const response = await this.client.post(`/api/v3/projects/${projectId}/memberships`, {
-      user: { href: `/api/v3/users/${userId}` },
-      roles: roleIds.map(id => ({ href: `/api/v3/roles/${id}` })),
+    const response = await this.client.post('/api/v3/memberships', {
+      _links: {
+        project: { href: `/api/v3/projects/${projectId}` },
+        principal: { href: `/api/v3/users/${userId}` },
+        roles: roleIds.map(id => ({ href: `/api/v3/roles/${id}` })),
+      },
     });
     return response.data;
   }
 
-  async removeProjectMember(projectId: number | string, membershipId: number): Promise<void> {
-    await this.client.delete(`/api/v3/projects/${projectId}/memberships/${membershipId}`);
+  async removeProjectMember(_projectId: number | string, membershipId: number): Promise<void> {
+    await this.client.delete(`/api/v3/memberships/${membershipId}`);
   }
 
   async listProjectVersions(projectId: number | string): Promise<{ _embedded: { elements: Version[] } }> {
