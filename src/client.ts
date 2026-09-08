@@ -129,6 +129,24 @@ export interface Relation {
   };
 }
 
+export interface TimeEntry {
+  id: number;
+  comment?: { format: string; raw: string; html: string };
+  spentOn: string;
+  hours: string;
+  ongoing?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  _links: {
+    self: { href: string };
+    project?: { href: string; title: string };
+    workPackage?: { href: string; title: string };
+    entity?: { href: string; title: string };
+    user?: { href: string; title: string };
+    activity?: { href: string; title: string };
+  };
+}
+
 export class OpenProjectClient {
   private client: AxiosInstance;
 
@@ -448,6 +466,80 @@ export class OpenProjectClient {
     if (params?.projectId) queryParams.projectId = params.projectId;
 
     const response = await this.client.get('/api/v3/queries', { params: queryParams });
+    return response.data;
+  }
+
+  // ==================== Time Entries ====================
+
+  async listTimeEntries(params?: {
+    filters?: string;
+    offset?: number;
+    pageSize?: number;
+    sortBy?: string;
+  }): Promise<{ _embedded: { elements: TimeEntry[] }; total: number }> {
+    const queryParams: any = {};
+    if (params?.filters) queryParams.filters = params.filters;
+    if (params?.offset) queryParams.offset = params.offset;
+    if (params?.pageSize) queryParams.pageSize = params.pageSize;
+    if (params?.sortBy) queryParams.sortBy = params.sortBy;
+
+    const response = await this.client.get('/api/v3/time_entries', { params: queryParams });
+    return response.data;
+  }
+
+  async getTimeEntry(timeEntryId: number): Promise<TimeEntry> {
+    const response = await this.client.get(`/api/v3/time_entries/${timeEntryId}`);
+    return response.data;
+  }
+
+  async createTimeEntry(data: {
+    hours: string;
+    spentOn: string;
+    workPackageId?: number;
+    projectId?: number | string;
+    activityId?: number;
+    userId?: number;
+    comment?: string;
+  }): Promise<TimeEntry> {
+    const payload: any = {
+      hours: data.hours,
+      spentOn: data.spentOn,
+      _links: {},
+    };
+    if (data.comment) payload.comment = { raw: data.comment };
+    if (data.workPackageId) payload._links.workPackage = { href: `/api/v3/work_packages/${data.workPackageId}` };
+    if (data.projectId) payload._links.project = { href: `/api/v3/projects/${data.projectId}` };
+    if (data.activityId) payload._links.activity = { href: `/api/v3/time_entries/activities/${data.activityId}` };
+    if (data.userId) payload._links.user = { href: `/api/v3/users/${data.userId}` };
+
+    const response = await this.client.post('/api/v3/time_entries', payload);
+    return response.data;
+  }
+
+  async updateTimeEntry(timeEntryId: number, data: Partial<{
+    hours: string;
+    spentOn: string;
+    comment: string;
+    workPackageId: number;
+    activityId: number;
+  }>): Promise<TimeEntry> {
+    const payload: any = {};
+    if (data.hours !== undefined) payload.hours = data.hours;
+    if (data.spentOn !== undefined) payload.spentOn = data.spentOn;
+    if (data.comment !== undefined) payload.comment = { raw: data.comment };
+    if (data.workPackageId !== undefined) payload._links = { ...payload._links, workPackage: { href: `/api/v3/work_packages/${data.workPackageId}` } };
+    if (data.activityId !== undefined) payload._links = { ...payload._links, activity: { href: `/api/v3/time_entries/activities/${data.activityId}` } };
+
+    const response = await this.client.patch(`/api/v3/time_entries/${timeEntryId}`, payload);
+    return response.data;
+  }
+
+  async deleteTimeEntry(timeEntryId: number): Promise<void> {
+    await this.client.delete(`/api/v3/time_entries/${timeEntryId}`);
+  }
+
+  async listTimeEntryActivities(): Promise<{ _embedded: { elements: { id: number; name: string }[] } }> {
+    const response = await this.client.get('/api/v3/time_entries/activities');
     return response.data;
   }
 
