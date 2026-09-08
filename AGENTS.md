@@ -54,6 +54,14 @@ Add to your `claude.json` or equivalent:
 - `op_delete_work_package_relation` - Delete a relation
 - `op_get_project_work_packages` - Get all work packages in a project
 
+### Time Entries
+- `op_list_time_entries` - List time entries (time logs) with filters
+- `op_get_time_entry` - Get time entry details
+- `op_create_time_entry` - Log time against a work package or project
+- `op_update_time_entry` - Update a time entry
+- `op_delete_time_entry` - Delete a time entry
+- `op_list_time_entry_activities` - List time entry activities
+
 ### Reference Data
 - `op_list_statuses` - List all statuses
 - `op_list_types` - List all work package types
@@ -128,4 +136,13 @@ Operators:
 
 3. **API Response Format**: All responses return HAL+JSON formatted data. The actual data is in `_embedded.elements` for collections.
 
-4. **Permissions**: The API key determines what operations are allowed based on the user's permissions in OpenProject.
+4. **Time Entries**:
+   - `hours` - Required, ISO 8601 duration (e.g., "PT2H30M" for 2.5 hours)
+   - `spentOn` - Required, date the time was spent (YYYY-MM-DD)
+   - Provide `workPackageId` OR `projectId` to say what the time is logged against
+   - `activityId` - Optional, time entry activity (Development, Testing, etc.)
+   - `userId` - Optional, defaults to the authenticated user
+   - Filter with the `filters` param, e.g. `[{"work_package":{"operator":"=","values":["123"]}}]`, `[{"user":{"operator":"=","values":["me"]}}]`, or a date range with `spent_on`/`<>d`
+   - `op_list_time_entry_activities` requires a newer OpenProject; on older versions the global endpoint 404s and activity IDs come from existing entries
+
+5. **Permissions**: The API key determines what operations are allowed based on the user's permissions in OpenProject.

@@ -411,6 +411,83 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {},
         },
       },
+      // ==================== Time Entries ====================
+      {
+        name: 'op_list_time_entries',
+        description: 'List time entries (time logs). Filter by work package, project, user, or date range using the filters param.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            filters: { type: 'string', description: 'JSON filter string, e.g. [{"work_package":{"operator":"=","values":["123"]}}] or [{"user":{"operator":"=","values":["me"]}}] or [{"spent_on":{"operator":"<>d","values":["2026-01-01","2026-12-31"]}}]' },
+            offset: { type: 'number', description: 'Page offset (1-based)' },
+            pageSize: { type: 'number', description: 'Results per page' },
+            sortBy: { type: 'string', description: 'Sort expression (e.g., [["spent_on","desc"]])' },
+          },
+        },
+      },
+      {
+        name: 'op_get_time_entry',
+        description: 'Get a single time entry by ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            timeEntryId: { type: 'number', description: 'The time entry ID' },
+          },
+          required: ['timeEntryId'],
+        },
+      },
+      {
+        name: 'op_create_time_entry',
+        description: 'Log time. Provide either workPackageId or projectId. hours is an ISO8601 duration (e.g. "PT2H30M" for 2.5 hours).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            hours: { type: 'string', description: 'ISO8601 duration, e.g. "PT2H", "PT30M", "PT1H30M"' },
+            spentOn: { type: 'string', description: 'Date the time was spent (YYYY-MM-DD)' },
+            workPackageId: { type: 'number', description: 'Work package to log time against' },
+            projectId: { type: 'string', description: 'Project to log time against (if not tied to a work package)' },
+            activityId: { type: 'number', description: 'Time entry activity ID (see op_list_time_entry_activities)' },
+            userId: { type: 'number', description: 'User the time is logged for (defaults to current user)' },
+            comment: { type: 'string', description: 'Comment' },
+          },
+          required: ['hours', 'spentOn'],
+        },
+      },
+      {
+        name: 'op_update_time_entry',
+        description: 'Update an existing time entry.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            timeEntryId: { type: 'number', description: 'The time entry ID to update' },
+            hours: { type: 'string', description: 'New ISO8601 duration' },
+            spentOn: { type: 'string', description: 'New date (YYYY-MM-DD)' },
+            comment: { type: 'string', description: 'New comment' },
+            workPackageId: { type: 'number', description: 'New work package ID' },
+            activityId: { type: 'number', description: 'New activity ID' },
+          },
+          required: ['timeEntryId'],
+        },
+      },
+      {
+        name: 'op_delete_time_entry',
+        description: 'Delete a time entry. Warning: This is destructive!',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            timeEntryId: { type: 'number', description: 'The time entry ID to delete' },
+          },
+          required: ['timeEntryId'],
+        },
+      },
+      {
+        name: 'op_list_time_entry_activities',
+        description: 'List available time entry activities (Development, Testing, etc.) with their IDs.',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
       // ==================== Search ====================
       {
         name: 'op_search',
@@ -652,6 +729,50 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       case 'op_list_groups': {
         const result = await client.listGroups();
+        return { content: [{ type: 'text', text: JSON.stringify(result._embedded.elements, null, 2) }] };
+      }
+      // ==================== Time Entries ====================
+      case 'op_list_time_entries': {
+        const result = await client.listTimeEntries({
+          filters: getString(args, 'filters'),
+          offset: getNumber(args, 'offset'),
+          pageSize: getNumber(args, 'pageSize'),
+          sortBy: getString(args, 'sortBy'),
+        });
+        return { content: [{ type: 'text', text: JSON.stringify(result._embedded.elements, null, 2) }] };
+      }
+      case 'op_get_time_entry': {
+        const result = await client.getTimeEntry(getNumber(args, 'timeEntryId')!);
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      }
+      case 'op_create_time_entry': {
+        const result = await client.createTimeEntry({
+          hours: getString(args, 'hours')!,
+          spentOn: getString(args, 'spentOn')!,
+          workPackageId: getNumber(args, 'workPackageId'),
+          projectId: getString(args, 'projectId') || getNumber(args, 'projectId'),
+          activityId: getNumber(args, 'activityId'),
+          userId: getNumber(args, 'userId'),
+          comment: getString(args, 'comment'),
+        });
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      }
+      case 'op_update_time_entry': {
+        const result = await client.updateTimeEntry(getNumber(args, 'timeEntryId')!, {
+          hours: getString(args, 'hours'),
+          spentOn: getString(args, 'spentOn'),
+          comment: getString(args, 'comment'),
+          workPackageId: getNumber(args, 'workPackageId'),
+          activityId: getNumber(args, 'activityId'),
+        });
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      }
+      case 'op_delete_time_entry': {
+        await client.deleteTimeEntry(getNumber(args, 'timeEntryId')!);
+        return { content: [{ type: 'text', text: 'Time entry deleted successfully' }] };
+      }
+      case 'op_list_time_entry_activities': {
+        const result = await client.listTimeEntryActivities();
         return { content: [{ type: 'text', text: JSON.stringify(result._embedded.elements, null, 2) }] };
       }
       // ==================== Search ====================

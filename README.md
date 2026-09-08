@@ -9,6 +9,7 @@ This MCP server provides a comprehensive set of tools that allow an AI agent to:
 - Manage work packages (tasks, bugs, features, etc.)
 - Handle project members and versions
 - Query statuses, types, priorities, users, and roles
+- Read and write time entries (time logs)
 - Search across work packages
 
 ## Features
@@ -31,6 +32,14 @@ This MCP server provides a comprehensive set of tools that allow an AI agent to:
 - View activity history and comments
 - Add comments to work packages
 - Manage relations between work packages
+
+### Time Entries
+- List time entries with filtering (by work package, project, user, date range)
+- Get a single time entry
+- Log time against a work package or project
+- Update an existing time entry
+- Delete a time entry
+- List time entry activities
 
 ### Reference Data
 - List all available statuses
@@ -144,6 +153,12 @@ Here's how an agent might use the tools:
 | `op_create_work_package_relation` | Create relation |
 | `op_delete_work_package_relation` | Delete relation |
 | `op_get_project_work_packages` | Get all WPs in project |
+| `op_list_time_entries` | List time entries (time logs) |
+| `op_get_time_entry` | Get time entry details |
+| `op_create_time_entry` | Log time |
+| `op_update_time_entry` | Update time entry |
+| `op_delete_time_entry` | Delete time entry |
+| `op_list_time_entry_activities` | List time entry activities |
 | `op_list_statuses` | List all statuses |
 | `op_list_types` | List all types |
 | `op_get_project_types` | List types in project |
